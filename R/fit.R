@@ -27,6 +27,7 @@
 #' @examples
 fit = function(data = data_sim,
                contamination = F,
+               show_code = T,
                offset = F,
                beta_prior = "normal",
                small_area_prior = "fixed",
