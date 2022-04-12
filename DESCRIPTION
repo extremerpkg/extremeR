@@ -1,0 +1,50 @@
+Package: extremeR
+Title: A Bayesian Case-Control Approach for Analyzing Extreme Behavior
+Version: 0.0.0.9000
+Authors@R: 
+    c(person(given = "ANON",
+           family = "ANON",
+           role = c("aut", "cre"),
+           email = "ANON.ANON@ANON.ANON",
+           comment = c(ORCID = "0000-ANON-ANON-ANON")),
+           person(given = "ANON",
+           family = "ANON",
+           role = c("aut"),
+           email = "ANON.ANON@ANON.ANON",
+           comment = c(ORCID = "0000-ANON-ANON-ANON")),
+           person(given = "ANON",
+	         family = "ANON",
+	         role = c("ctb"),
+	         email = "ANON.ANON@ANON.ANON",
+	         comment = c(ORCID = "0000-ANON-ANON-ANON")))
+Description: Estimates Bayesian Case-Control technique described in "Explaining Recruitment to Violent Extremism: A Bayesian Case-Control Approach."
+URL: https://anonymous.4open.science/r/extremeR/
+BugReports: https://anonymous.4open.science/r/extremeR/
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.2
+Depends:
+    R (>= 3.5)
+Additional_repositories: https://inla.r-inla-download.org/R/stable/
+Imports:
+    sf,
+    spdep,
+    data.table,
+    stats,
+    geodist,
+    magrittr,
+    dplyr,
+    Matrix,
+    rstan,
+    R2jags,
+    MASS,
+    SpatialEpi,
+    ape,
+    INLA, 
+    raster
+Suggests: 
+    knitr,
+    rmarkdown
+LazyData: true
+VignetteBuilder: knitr

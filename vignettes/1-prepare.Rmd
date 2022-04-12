@@ -1,0 +1,177 @@
+---
+title: "1. Prepare"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{1. Prepare}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Introduction
+
+Estimating the the models described in Explaining Recruitment to Violent Extremism: A Bayesian Case-Control Approach (ERVE) requires just two steps:
+
+1. Prepare the data sources in list format using `data.prep()`
+2. Estimate the model using `fit()`
+
+This explainer vignette walks you through the first of these two steps. 
+
+Preparing the dataset for the estimation procedure requires two sources of data: 1) survey data with labels for "cases" and "controls" (as well as any relevant covariates) and; a shapefile for the geographical region under investigation.
+
+## Setup
+First install the package from source if not already installed.
+
+```{r, eval =FALSE}
+devtools::install_github("ANON/extremeR")
+```
+
+We then load the package into memory as follows.
+
+```{r, warning = F, message = F}
+library(extremeR)
+```
+
+We can  then load the data we need into memory using the data bundled in this package as follows. 
+
+```{r}
+data(survey_egypt)
+data(shape_egypt)
+data(denom_mena)
+```
+
+We can see that our case-control survey data,  `survey_egypt`, and our denominator data, `denom_mena` are "data.table" "data.frame" objects. 
+
+Our Egypt shapefile data is here stored as an "sf" "data.frame" object.
+
+```{r}
+class(survey_egypt)
+class(shape_egypt)
+class(denom_mena)
+```
+
+Note that here we are using data bundled with the <tt>extremeR</tt> package. If we had a series of shapefiles of the type provided e.g. [here](https://data.humdata.org/dataset/geoboundaries-admin-boundaries-for-egypt/resource/920c7328-f6d1-4882-86f7-45e283cee521), we could generate the "sf" object from these files as follows.
+
+```{r, eval = F}
+shapefile_path <- "data/EGY_adm2.shp"
+shape_egypt <- sf::st_read(shapefile_path)
+```
+
+## Inspect data
+
+Now that we have each data source that we need: i.e., the case-control data and the shapefile, we are ready to inspect the data. We will begin with the case-control data.
+
+```{r, echo =F}
+rmarkdown::paged_table(survey_egypt)
+```
+
+Here we see that our observations are labelled as either "0" if a control or "1" if a case. Alongside this information we have a series of relevant covariates. The last column in our data is the geographical region from which the observation is derived. We will use this last column to merge the data with the shapefile information. 
+```{r, echo =F}
+rmarkdown::paged_table(shape_egypt)
+```
+
+The shapefile data is plotted below. The relevant geographic identifiers we'll be using in the shapefile are "ADM1_EN" for the large area and "ADM2_EN" for the small area. 
+
+We'll then be merging with the "ADM2_PCODE" identifier, as this is the common identifier between our shapefile and case-control data. 
+
+```{r, echo=F, warning = F, message=FALSE}
+plot(shape_egypt[c(1,9)])
+```
+
+Finally, we need to input information on the known prevalence of the outcome in the population of interest. For this, we need to know the relevant population denominator. In the ERVE example, this is the adult male Sunni population. 
+
+These data are also bundled into the package, and we can look at them below. 
+```{r, echo =F}
+rmarkdown::paged_table(denom_mena)
+```
+
+To extract the relevant denominator for Egypt we can do as follows. 
+
+```{r}
+denom_egypt <- denom_mena$male_18_sunni[which(denom_mena$country=="Egypt")]
+```
+
+## Preparing the data
+
+We are now in a position to bundle these data sources into a list object suitable for the `fit()` function to estimate one of the models described in ERVE. 
+
+The `data.prep()` function has a series of parameters that we tabulate and describe below.
+
+| Argument   |     Description      |
+|----------|:-------------:|
+|shape | sf object, shapefile data
+|survey | data.table data.frame, case-control data including common geographic ID
+|shape_large.area_id_name | string, large area name identifiers in the shapefile
+|shape_large.area_id_num | integer, large area identifiers in the shapefile
+|shape_small.area_id_name | string, small area name identifiers in the shapefile
+|shape_small.area_id_num | integer, small area identifiers in the shapefile
+|survey_small.area_id_name |string, small area name identifiers in the survey
+|survey_small.area_id_num | integer, small area identifiers in the survey
+|drop.incomplete.records | logical, should the function return complete data? Defaults to `TRUE`
+|colnames_X | character vector, covariates definining the design matrix X. Must be numeric.
+|interactions_list | list, each element is a string of the form "a*b" where a and be are the names of two variables in colnames_X
+|scale_X | string, takes values "1sd" or "2sd"
+|colname_y | string, variable name for the outcome variable. Must be numeric.
+|contamination | logical, should this offset account for contamination? Defaults to `TRUE`
+|pi | numeric, scalar defining the prevalence of the outcome in the population of interest
+|large_area_shape | logical, should the function return a large-area shapefile? Defaults to `TRUE`
+
+
+```{r, eval = T, warning = F, message = F}
+# prep data
+data.list =
+  data.prep(
+    shape = shape_egypt,
+    survey = survey_egypt,
+    shape_large.area_id_name = "ADM1_EN",
+    shape_large.area_id_num = NA,
+    shape_small.area_id_name = "ADM2_EN",
+    shape_small.area_id_num = "ADM2_PCODE",
+    survey_small.area_id_name = NA,
+    survey_small.area_id_num = "adm2_pcode",
+    drop.incomplete.records = T,
+    colnames_X = c(
+      "coledu",
+      "age",
+      "married",
+      "student",
+      "lowstat",
+      "population_density",
+      "total_population_2006",
+      "christian_2006_pct",
+      "university_2006_pct",
+      "agriculture_2006_pct",
+      "mursi_vote_2012_pct",
+      "sqrt_killed_at_rabaa",
+      "unemployment_2013q4_pct",
+      "sqrt_protest_post_Mubarak"
+    ),
+    interactions_list = list(age2 = "age*age", coledu_lowstat = "coledu*lowstat"),
+    scale_X = "1sd",
+    colname_y = "case",
+    contamination = T,
+    pi = 1000 / denom_egypt,
+    large_area_shape = T
+  )
+
+```
+
+The `data.prep()` function takes our shapefile and case-control data and bundles it into a list. 
+
+We can look at the structure of these data below. We see that the list contains our survey data, shapefiles, generated neighbourhood matrices, outcome observations etc. 
+
+```{r}
+summary(data.list)
+```
+
+And we can save the formatted data for later use as follows.
+
+```{r, eval = F}
+save(data.list, "data/data.list.rda")
+```
+
+We can then check that the neighbourhood matrix is properly connected using the `testconnected()` function as below. 
+
+```{r}
+# check that the nb object is fully connected
+testconnected(data.list$nb_object)
+```

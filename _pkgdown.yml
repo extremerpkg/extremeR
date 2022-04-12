@@ -1,0 +1,48 @@
+url: https://extremer.info/index.html
+template:
+  bootstrap: 5
+  bootswatch: simplex
+reference:
+- title: Prepare data
+  desc: |
+    Function to prepare data in format required for estimation procedure
+  contents: data.prep
+- title: Estimate model
+  desc: |
+    Function to estimate a Bayesian case-control model.
+  contents: fit
+- title: Run simulations
+  desc: |
+    Function to simulate data from a relevant data generating process (DGP)
+  contents: dgf
+- title: Shapefile data
+  desc: |
+    Shapefile data for `dgf()` function and main case-control examples.
+  contents:
+  - scotland
+  - pennLC
+  - NYleukemia
+  - shape_egypt
+- title: Case-control data
+  desc: |
+    Example case-control data.
+  contents:
+  - survey_egypt
+  - denom_mena
+  - data.list
+  - mon_egypt
+- title: Helper functions
+  desc: |
+    Helper functions to check graph connected
+  contents:
+  - testconnected
+  - isdisconnected
+navbar:
+ components:
+   articles:
+    text: "Vignettes"
+    menu:
+    - text: "1. Prepare"
+      href: articles/1-prepare.html
+    - text: "2. Estimate"
+      href: articles/2-estimate.html

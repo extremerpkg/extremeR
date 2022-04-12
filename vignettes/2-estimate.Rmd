@@ -1,0 +1,132 @@
+---
+title: "2. Estimate"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{2. Estimate}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Introduction
+
+Estimating the the models described in Explaining Recruitment to Violent Extremism: A Bayesian Case-Control Approach (ERVE) requires just two steps:
+
+1. Prepare the data sources in list format using `data.prep()`
+2. Estimate the model using `fit()`
+
+This explainer vignette walks you through the second of these two steps.
+
+## Setup
+
+First install the package from source if not already installed.
+
+```{r, eval =FALSE}
+devtools::install_github("ANON/extremeR")
+```
+
+We then load the package into memory as follows. We will also be using several functions from the `rstan` package. 
+
+```{r, warning = F, message = F}
+library(extremeR)
+library(rstan)
+```
+
+## Load data
+
+Then we load the pre-formatted data into memory as follows.
+
+```{r, eval = F}
+data(data.list)
+```
+
+```{r, echo = F}
+load("data/data.list.rda")
+```
+
+## Estimate model 
+
+And we are then ready to estimate the ERVE model for the Egyptian case-control data.
+
+The `fit()` function has a series of parameters that we tabulate and describe below.
+
+| Argument   |     Description      |
+|----------|:-------------:|
+|data | list, survey and shapefile combined list object created with the `data.prep()` function
+|show_code | logical, should the stan code print on the screen at the end of the run? Defaults to `TRUE`
+|contamination | logical, should the model include the Rota et al. (2013) style contamination layer? Defaults to `TRUE`
+|offset | logical, should the model include a King and Zeng (2001) style offset ? if contamination is also specified, this will be a contaminated-offset. Defaults to `TRUE`
+|beta_prior | string, what prior should the regression coefficients have? Choice between: "normal" and "cauchy"
+|small_area_prior | string, what should be the small-area effects type? Choice between: "fixed," "random," "ICAR," and "BYM2." Specify `NA` for no area effects. Defaults to "fixed"
+|large_area_prior | string, what should be the large-area effects type? Choice between: "fixed" and "random." Specify `NA` for no area effects. Defaults to `NA`.
+|intercept_scale | integer, scale of intercept; arguments taken from `rstan`, see [here](https://mc-stan.org/users/interfaces/rstan) for further information
+|iter | integer, number of draws; arguments taken from `rstan`, see [here](https://mc-stan.org/users/interfaces/rstan) for further information
+|warmup | integer, number of warmup draws; arguments taken from `rstan`, see [here](https://mc-stan.org/users/interfaces/rstan) for further information
+|thin | integer, number to thin draws; arguments taken from `rstan`, see [here](https://mc-stan.org/users/interfaces/rstan) for further information
+|cores | integer, number of cores to use; arguments taken from `rstan`, see [here](https://mc-stan.org/users/interfaces/rstan) for further information
+|chains | integer, number of chains; arguments taken from `rstan`, see [here](https://mc-stan.org/users/interfaces/rstan) for further information
+|control | list, tree depth and adapt delta; arguments taken from `rstan`, see [here](https://mc-stan.org/users/interfaces/rstan) for further information
+|verbose | logical, print full stan output? Defaults to `TRUE`
+
+```{r, eval = F}
+fit_object = fit(
+  data = data.list,
+  show_code = T,
+  contamination = T,
+  offset = T,
+  beta_prior = "cauchy",
+  small_area_prior = "BYM2",
+  intercept_scale = 10,
+  large_area_prior = "random",
+  iter = 25000,
+  warmup = 22500,
+  thin = 4,
+  cores = 4,
+  chains = 4,
+  control = list(max_treedepth = 25, adapt_delta = 0.99),
+  verbose = T
+)
+```
+
+## Check MCMC convergence
+
+We can then check the summary convergence statistics by using the `monitor()` function in `rstan`.
+
+```{r, eval = F}
+mon_egypt <- rstan::monitor(rstan::extract(fit_object, permuted = FALSE, inc_warmup = TRUE))
+```
+
+```{r, echo = F}
+load("data/mon_egypt.rda")
+```
+
+And we could inspect the output for, e.g., the $\hat{R}$ values as follows.
+
+```{r}
+rhats <- mon_egypt$Rhat
+plot(rhats)
+```
+
+## Inspect output
+
+And we are able to access the estimated parameters of the "stanfit" object by using the `extract()` function in `rstan`. 
+
+```{r, eval = F}
+betas_egypt <- rstan::extract(fit_object ,
+                           pars = c('beta'),
+                           permuted = TRUE,
+                           inc_warmup = FALSE,
+                           include = TRUE)
+```
+
+Or printing from the fit object directly. 
+
+```{r, eval = F}
+print(fit_object, pars=c("beta"), probs=c(.1,.5,.9))
+```
+
+```{r, echo = F}
+# printbetas <- paste0(capture.output(print(fit_object, pars=c("beta"), probs=c(.1,.5,.9))), collapse = "\n")
+# save(printbetas, file = "vignettes/data/printbetas.rda")
+load("data/printbetas.rda")
+cat(printbetas)
+```
